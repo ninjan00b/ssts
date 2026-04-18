@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSTS — Secure Self Transfer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3a;
+    --accent: #6c63ff;
+    --accent-hover: #7b74ff;
+    --text: #e2e4f0;
+    --text-dim: #7c7f96;
+    --error: #f87171;
+    --success: #34d399;
+    --radius: 12px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  header p {
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    margin-top: 4px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 24px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tab-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .panel {
+    display: none;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .panel.active { display: flex; flex-direction: column; gap: 16px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95rem;
+    padding: 12px;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.15s;
+    font-family: inherit;
+  }
+
+  textarea { min-height: 100px; }
+
+  textarea:focus, input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+
+  .type-select {
+    display: flex;
+    gap: 8px;
+  }
+
+  .type-btn {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .type-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(108, 99, 255, 0.1);
+  }
+
+  .file-drop {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    color: var(--text-dim);
+    font-size: 0.875rem;
+  }
+
+  .file-drop:hover, .file-drop.drag-over {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .file-drop input { display: none; }
+
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .code-display {
+    text-align: center;
+    padding: 24px;
+  }
+
+  .code-display .label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+
+  .code-big {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  }
+
+  .expires {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  #qrcode {
+    margin: 16px auto 0;
+    width: fit-content;
+    background: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    display: none;
+  }
+
+  .code-input-wrap {
+    position: relative;
+  }
+
+  #recv-code {
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-align: center;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    padding: 16px;
+  }
+
+  .result-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.9rem;
+    word-break: break-all;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+  }
+
+  .notice {
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    display: none;
+  }
+
+  .notice.error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--error); }
+  .notice.success { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: var(--success); }
+
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SSTS</h1>
+  <p>Secure Self Transfer · LAN only · one-time · 5 min TTL</p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('send')">Send</button>
+  <button class="tab-btn" onclick="switchTab('recv')">Receive</button>
+</div>
+
+<!-- SEND PANEL -->
+<div id="panel-send" class="panel active">
+  <div class="card">
+    <label>Type</label>
+    <div class="type-select">
+      <button class="type-btn active" onclick="setType('text', this)">Text</button>
+      <button class="type-btn" onclick="setType('url', this)">URL</button>
+      <button class="type-btn" onclick="setType('file', this)">File</button>
+    </div>
+
+    <div id="text-area-wrap">
+      <label>Content</label>
+      <textarea id="send-text" placeholder="Paste your text or URL here…"></textarea>
+    </div>
+
+    <div id="file-area-wrap" style="display:none">
+      <label>File <span style="color:var(--text-dim);font-size:0.75rem;text-transform:none">(≤ 1 MB)</span></label>
+      <div class="file-drop" id="file-drop" onclick="document.getElementById('file-input').click()"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <input type="file" id="file-input" onchange="onFileChange(event)">
+        <span id="file-label">Click or drag & drop a file here</span>
+      </div>
+    </div>
+
+    <div id="send-notice" class="notice"></div>
+    <button class="btn btn-primary" id="send-btn" onclick="doSend()">Send</button>
+  </div>
+
+  <div class="card code-display" id="send-result" style="display:none">
+    <div class="label">Your transfer code</div>
+    <div class="code-big" id="result-code"></div>
+    <div class="expires" id="result-expires"></div>
+    <div id="qrcode"></div>
+    <button class="btn btn-secondary" onclick="copyCode()">Copy Code</button>
+    <button class="btn btn-secondary" onclick="resetSend()">Send Another</button>
+  </div>
+</div>
+
+<!-- RECEIVE PANEL -->
+<div id="panel-recv" class="panel">
+  <div class="card">
+    <label>Enter Code</label>
+    <div class="code-input-wrap">
+      <input type="text" id="recv-code" placeholder="A3K9PZ" maxlength="6"
+             oninput="this.value=this.value.toUpperCase().replace(/[^ABCDEFGHJKLMNPQRSTUVWXYZ23456789]/g,'')">
+    </div>
+    <div id="recv-notice" class="notice"></div>
+    <button class="btn btn-primary" id="recv-btn" onclick="doReceive()">Receive</button>
+  </div>
+
+  <div class="card" id="recv-result" style="display:none">
+    <div id="result-type-label" style="font-size:0.8rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em"></div>
+    <div class="result-box" id="result-content"></div>
+    <div id="recv-actions" style="display:flex;gap:8px;flex-direction:column"></div>
+  </div>
+</div>
+
+<script>
+  let currentType = 'text';
+  let selectedFile = null;
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0) === (tab==='send')));
+    document.getElementById('panel-send').classList.toggle('active', tab === 'send');
+    document.getElementById('panel-recv').classList.toggle('active', tab === 'recv');
+  }
+
+  function setType(type, btn) {
+    currentType = type;
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('text-area-wrap').style.display = type === 'file' ? 'none' : '';
+    document.getElementById('file-area-wrap').style.display = type === 'file' ? '' : 'none';
+    selectedFile = null;
+    document.getElementById('file-label').textContent = 'Click or drag & drop a file here';
+  }
+
+  function onDragOver(e) {
+    e.preventDefault();
+    document.getElementById('file-drop').classList.add('drag-over');
+  }
+
+  function onDragLeave(e) {
+    document.getElementById('file-drop').classList.remove('drag-over');
+  }
+
+  function onDrop(e) {
+    e.preventDefault();
+    document.getElementById('file-drop').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) selectFile(file);
+  }
+
+  function onFileChange(e) {
+    if (e.target.files[0]) selectFile(e.target.files[0]);
+  }
+
+  function selectFile(file) {
+    if (file.size > 1048576) {
+      showNotice('send-notice', 'error', 'File exceeds 1 MB limit');
+      return;
+    }
+    selectedFile = file;
+    document.getElementById('file-label').textContent = `${file.name} (${formatBytes(file.size)})`;
+  }
+
+  function formatBytes(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1048576) return (n/1024).toFixed(1) + ' KB';
+    return (n/1048576).toFixed(1) + ' MB';
+  }
+
+  async function doSend() {
+    hideNotice('send-notice');
+    const btn = document.getElementById('send-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Sending…';
+
+    try {
+      let body;
+      if (currentType === 'file') {
+        if (!selectedFile) { showNotice('send-notice', 'error', 'Please select a file'); return; }
+        const b64 = await fileToBase64(selectedFile);
+        body = { type: 'file', data: b64, filename: selectedFile.name };
+      } else {
+        const text = document.getElementById('send-text').value.trim();
+        if (!text) { showNotice('send-notice', 'error', 'Content cannot be empty'); return; }
+        body = { type: currentType, data: text };
+      }
+
+      const res = await fetch('/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const json = await res.json();
+      if (!res.ok) { showNotice('send-notice', 'error', json.error || 'Upload failed'); return; }
+
+      document.getElementById('result-code').textContent = json.code;
+      const exp = new Date(json.expires_at);
+      document.getElementById('result-expires').textContent = `Expires at ${exp.toLocaleTimeString()}`;
+      document.querySelector('.card').style.display = 'none';
+      document.getElementById('send-result').style.display = '';
+
+      renderQR(json.code);
+    } catch(e) {
+      showNotice('send-notice', 'error', 'Network error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send';
+    }
+  }
+
+  function renderQR(code) {
+    const el = document.getElementById('qrcode');
+    const url = window.location.origin + '?code=' + code;
+    // Use QR API only if online; skip silently on LAN-only setups
+    const img = new Image();
+    img.onload = () => { el.innerHTML = ''; el.appendChild(img); el.style.display = 'block'; };
+    img.onerror = () => { el.style.display = 'none'; };
+    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}`;
+  }
+
+  async function doReceive() {
+    hideNotice('recv-notice');
+    const code = document.getElementById('recv-code').value.trim();
+    if (code.length !== 6) { showNotice('recv-notice', 'error', 'Code must be 6 characters'); return; }
+
+    const btn = document.getElementById('recv-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Fetching…';
+
+    try {
+      const res = await fetch(`/fetch/${code}`);
+      const json = await res.json();
+
+      if (!res.ok) {
+        showNotice('recv-notice', 'error', res.status === 404 ? 'Code not found, already used, or expired' : json.error || 'Error');
+        return;
+      }
+
+      const result = document.getElementById('recv-result');
+      const actions = document.getElementById('recv-actions');
+      const content = document.getElementById('result-content');
+      actions.innerHTML = '';
+      document.getElementById('result-type-label').textContent = json.type;
+
+      if (json.type === 'file') {
+        content.style.display = 'none';
+        const blob = base64ToBlob(json.data);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = json.filename || 'download';
+        a.className = 'btn btn-primary';
+        a.textContent = `Download ${json.filename || 'file'}`;
+        actions.appendChild(a);
+      } else {
+        content.textContent = json.data;
+        content.style.display = '';
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'btn btn-secondary';
+        copyBtn.textContent = 'Copy';
+        copyBtn.onclick = () => { navigator.clipboard.writeText(json.data); copyBtn.textContent = 'Copied!'; setTimeout(() => copyBtn.textContent = 'Copy', 2000); };
+        actions.appendChild(copyBtn);
+
+        if (json.type === 'url') {
+          const openBtn = document.createElement('a');
+          openBtn.href = json.data;
+          openBtn.target = '_blank';
+          openBtn.rel = 'noopener noreferrer';
+          openBtn.className = 'btn btn-primary';
+          openBtn.textContent = 'Open URL';
+          actions.appendChild(openBtn);
+        }
+      }
+
+      result.style.display = '';
+    } catch(e) {
+      showNotice('recv-notice', 'error', 'Network error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Receive';
+    }
+  }
+
+  function copyCode() {
+    const code = document.getElementById('result-code').textContent;
+    navigator.clipboard.writeText(code);
+  }
+
+  function resetSend() {
+    document.querySelector('.card').style.display = '';
+    document.getElementById('send-result').style.display = 'none';
+    document.getElementById('send-text').value = '';
+    selectedFile = null;
+    document.getElementById('file-label').textContent = 'Click or drag & drop a file here';
+    document.getElementById('qrcode').style.display = 'none';
+    document.getElementById('qrcode').innerHTML = '';
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function base64ToBlob(b64) {
+    const bytes = atob(b64);
+    const arr = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+    return new Blob([arr]);
+  }
+
+  function showNotice(id, type, msg) {
+    const el = document.getElementById(id);
+    el.className = 'notice ' + type;
+    el.textContent = msg;
+    el.style.display = '';
+  }
+
+  function hideNotice(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+
+  // Pre-fill code from URL param (?code=...)
+  const urlCode = new URLSearchParams(location.search).get('code');
+  if (urlCode) {
+    switchTab('recv');
+    document.getElementById('recv-code').value = urlCode.toUpperCase();
+  }
+</script>
+</body>
+</html>

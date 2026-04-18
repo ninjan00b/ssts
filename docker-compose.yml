@@ -1,0 +1,11 @@
+services:
+  ssts:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SSTS_LISTEN_ADDR=0.0.0.0:8080
+      - SSTS_MAX_PAYLOAD_BYTES=1048576
+      - SSTS_TTL_SECONDS=300
+      - SSTS_RATE_LIMIT=10
