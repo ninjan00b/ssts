@@ -223,15 +223,6 @@
     margin-top: 8px;
   }
 
-  #qrcode {
-    margin: 16px auto 0;
-    width: fit-content;
-    background: #fff;
-    padding: 12px;
-    border-radius: 8px;
-    display: none;
-  }
-
   .code-input-wrap {
     position: relative;
   }
@@ -327,7 +318,6 @@
     <div class="label">Your transfer code</div>
     <div class="code-big" id="result-code"></div>
     <div class="expires" id="result-expires"></div>
-    <div id="qrcode"></div>
     <button class="btn btn-secondary" onclick="copyCode()">Copy Code</button>
     <button class="btn btn-secondary" onclick="resetSend()">Send Another</button>
   </div>
@@ -439,24 +429,12 @@
       document.getElementById('result-expires').textContent = `Expires at ${exp.toLocaleTimeString()}`;
       document.querySelector('.card').style.display = 'none';
       document.getElementById('send-result').style.display = '';
-
-      renderQR(json.code);
     } catch(e) {
       showNotice('send-notice', 'error', 'Network error');
     } finally {
       btn.disabled = false;
       btn.textContent = 'Send';
     }
-  }
-
-  function renderQR(code) {
-    const el = document.getElementById('qrcode');
-    const url = window.location.origin + '?code=' + code;
-    // Use QR API only if online; skip silently on LAN-only setups
-    const img = new Image();
-    img.onload = () => { el.innerHTML = ''; el.appendChild(img); el.style.display = 'block'; };
-    img.onerror = () => { el.style.display = 'none'; };
-    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}`;
   }
 
   async function doReceive() {
@@ -533,8 +511,6 @@
     document.getElementById('send-text').value = '';
     selectedFile = null;
     document.getElementById('file-label').textContent = 'Click or drag & drop a file here';
-    document.getElementById('qrcode').style.display = 'none';
-    document.getElementById('qrcode').innerHTML = '';
   }
 
   function fileToBase64(file) {
