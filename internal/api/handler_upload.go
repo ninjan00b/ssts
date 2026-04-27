@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"ssts/internal/store"
@@ -41,6 +42,11 @@ func UploadHandler(s *store.Store, maxPayloadBytes int64) http.HandlerFunc {
 
 		if req.Data == "" {
 			writeError(w, http.StatusBadRequest, "data must not be empty")
+			return
+		}
+
+		if req.Type == "url" && !strings.HasPrefix(req.Data, "http://") && !strings.HasPrefix(req.Data, "https://") {
+			writeError(w, http.StatusBadRequest, "url must begin with http:// or https://")
 			return
 		}
 
